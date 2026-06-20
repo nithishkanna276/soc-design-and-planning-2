@@ -146,16 +146,11 @@ Standard cell characterization relies on highly accurate SPICE simulations. A de
 #### Lab Execution — Custom Inverter Layout and Extraction
 Pulling the Layout:
 
-git clone https://github.com/nickson-jose/vsdstdcelldesign.git
-magic -T sky130A.tech sky130_inv.mag &
-
 #### Extracting Netlist in Magic tkcon:
 
-```tcl
 extract all
 ext2spice cthresh 0 rthresh 0
 ext2spice
-```
 
 #### Prepping the file by observing grid parameters:
 
@@ -163,10 +158,9 @@ ext2spice
 
 
 ngspice sky130_inv.spice
-```
-```ngspice
+
 plot y vs time a
-```
+
 #### Rise transition time calculation
 
 Rise transition time = Time taken for output to rise to 80% - Time taken for output to rise to 20%
@@ -186,5 +180,137 @@ Fall transition time = Time taken for output to fall to 20% - Time taken for out
 Incorrectly implemented poly.9 simple rule correction
 
 Incorrectly implemented poly.9 rule no drc violation even though spacing < 0.48u
+
+# Day 4 — Pre-Layout Timing & Clock Tree Synthesis (CTS)
+
+#### Abstracting the Layout with LEF
+
+The placement engine doesn't need to see the internal transistor layout of a cell; it only needs the physical boundary, metal layer routing data, and pin locations. This is abstracted into a LEF file. For seamless placement, the custom cell must be grid-aligned with its ports landing exactly on intersection points of the horizontal and vertical tracks.
+
+#### Lab Execution — Custom Cell Integration & OpenSTA
+
+#### Referencing the tracks info for grid alignment:
+
+#### Applying grid spacing in Magic:
+
+help grid
+grid 0.46um 0.34um 0.23um 0.17um
+
+#### Writing the custom cell LEF:
+
+Moving LEF and lib files to the src directory of the design:
+
+Configuring config.tcl to point to the new libraries:
+
+set ::env(LIB_SYNTH)      "$::env(OPENLANE_ROOT)/designs/picorv32a/src/sky130_fd_sc_hd__typical.lib"
+set ::env(LIB_FASTEST)    "$::env(OPENLANE_ROOT)/designs/picorv32a/src/sky130_fd_sc_hd__fast.lib"
+set ::env(LIB_SLOWEST)    "$::env(OPENLANE_ROOT)/designs/picorv32a/src/sky130_fd_sc_hd__slow.lib"
+set ::env(LIB_TYPICAL)    "$::env(OPENLANE_ROOT)/designs/picorv32a/src/sky130_fd_sc_hd__typical.lib"
+set ::env(EXTRA_LEFS)     [glob $::env(OPENLANE_ROOT)/designs/$::env(DESIGN_NAME)/src/*.lef]
+
+Validating abutment and successful placement of the custom inverter cell in Magic:
+
+Expanding internal views:
+
+expand
+
+#### Pre-CTS OpenSTA Analysis:
+Setting up custom SDC constraints (my_base.sdc):
+
+sta pre_sta.conf
+
+#### Clock Tree Synthesis Execution:
+
+run_cts
+
+#### Generating expanded timing reports via OpenROAD database:
+
+openroad
+read_lef /OpenLane/designs/picorv32a/runs/24-03_10-03/tmp/merged.nom.lef
+read_def /OpenLane/designs/picorv32a/runs/24-03_10-03/results/cts/picorv32a.def
+write_db pico_cts.db
+read_db pico_cts.db
+read_verilog /OpenLane/designs/picorv32a/runs/24-03_10-03/results/synthesis/picorv32a.v
+read_liberty $::env(LIB_SYNTH_COMPLETE)
+link_design picorv32a
+read_sdc /OpenLane/designs/picorv32a/src/my_base.sdc
+set_propagated_clock [all_clocks]
+report_checks -path_delay min_max -fields {slew trans net cap input_pins} -format full_clock_expanded -digits 4
+exit
+
+#### Get syntax for grid command
+help grid
+
+#### Set grid values accordingly
+grid 0.46um 0.34um 0.23um 0.17um
+
+Generate lef from the layout.
+
+Command for tkcon window to write lef
+
+Copy the newly generated lef and associated required lib files to 'picorv32a' design 'src' directory.
+
+Commands to copy necessary files to 'picorv32a' design 'src' directory
+
+#### Editing `config.tcl` to Include Custom Cell
+
+set ::env(LIB_SYNTH)      "$::env(OPENLANE_ROOT)/designs/picorv32a/src/sky130_fd_sc_hd__typical.lib"
+set ::env(LIB_FASTEST)    "$::env(OPENLANE_ROOT)/designs/picorv32a/src/sky130_fd_sc_hd__fast.lib"
+set ::env(LIB_SLOWEST)    "$::env(OPENLANE_ROOT)/designs/picorv32a/src/sky130_fd_sc_hd__slow.lib"
+set ::env(LIB_TYPICAL)    "$::env(OPENLANE_ROOT)/designs/picorv32a/src/sky130_fd_sc_hd__typical.lib"
+set ::env(EXTRA_LEFS)     [glob $::env(OPENLANE_ROOT)/designs/$::env(DESIGN_NAME)/src/*.lef]
+
+#### Command to view internal connectivity layers
+expand
+
+#### Running OpenSTA (Pre-CTS Timing)
+Newly created pre_sta.conf for STA analysis in openlane directory
+
+Newly created my_base.sdc for STA analysis in openlane/designs/picorv32a/src directory based on the file openlane/scripts/base.sd
+
+sta pre_sta.conf
+
+#### Running CTS
+
+run_cts
+
+#### Command to run OpenROAD tool
+openroad
+
+Reading lef file:
+read_lef /OpenLane/designs/picorv32a/runs/24-03_10-03/tmp/merged.nom.lef
+
+Reading def file:
+read_def /OpenLane/designs/picorv32a/runs/24-03_10-03/results/cts/picorv32a.def
+
+Creating an OpenROAD database to work with:
+write_db pico_cts.db
+
+Loading the created database in OpenROAD:
+read_db pico_cts.db
+
+Read netlist post CTS:
+read_verilog /OpenLane/designs/picorv32a/runs/24-03_10-03/results/synthesis/picorv32a.v
+
+Read library for design:
+read_liberty $::env(LIB_SYNTH_COMPLETE)
+
+Link design and library:
+link_design picorv32a
+
+Read in the custom sdc we created:
+read_sdc /OpenLane/designs/picorv32a/src/my_base.sdc
+
+Setting all cloks as propagated clocks:
+set_propagated_clock [all_clocks]
+
+Check syntax of 'report_checks' command:
+help report_checks
+
+Generating custom timing report:
+report_checks -path_delay min_max -fields {slew trans net cap input_pins} -format full_clock_expanded -digits 4
+
+Exit to OpenLANE flow
+exit
 
 Find problem in the DRC section of the old magic tech file for the skywater process and fix them.

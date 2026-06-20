@@ -64,27 +64,127 @@ OpenLANE is an automated script framework that orchestrates several open-source 
 
 Initializing the Environment:
 Working within the OpenLANE directory, the tool is launched interactively to allow step-by-step execution.
-```bash
+
 cd /home/vscode/Desktop/OpenLane
 make mount
 ./flow.tcl -interactive
 package require openlane 1.0.2
-```
+
 
 #### Design Setup:
 Merging the LEF files and preparing the working directories.
 
-```tcl
 prep -design picorv32a
-```
 
 #### Synthesis:
 
-```tcl
 run_synthesis
-```
 
-```
 Flop Ratio Calculation:
 Flop Ratio = (Total D Flip-Flops) / (Total Cells) = 1613 / 15762 ≈ 10.23%
+
+# Day 2 — Floorplanning and Standard Cells
+
+#### Macro Placement and Chip Geometry
+
+Floorplanning defines the physical constraints of the design:
+
+Utilization Factor: The area of the active netlist relative to the total core area. Starting around 0.5 (50%) leaves vital space for clock buffers and complex routing.
+
+Aspect Ratio: The core's height divided by its width. A ratio of 1.0 yields a perfect square.
+
+#### Managing Pre-placed Cells and Decap Injection
+
+Large blocks like SRAMs or analog IP are established as pre-placed cells. They are dropped into the floorplan manually before auto-placement. To stabilize their power supply during high-frequency switching, decoupling capacitors are packed around them to provide localized charge buffers.
+
+#### Robust Power Distribution
+
+To prevent severe IR drop across the silicon, a multi-layered grid of power (VDD) and ground (VSS) rails is constructed. This grid ensures every standard cell has immediate access to power, preventing logical faults and electromigration.
+
+### Lab Execution — Floorplan and Placement
+
+#### Generating Floorplan:
+
+run_floorplan
+
+#### Reviewing via Magic VLSI:
+
+cd results/floorplan/
+magic -T /home/vsduser/Desktop/OpenLane/designs/picorv32a/sky130A/libs.tech/magic/sky130A.tech \
+      lef read ../../tmp/merged.nom.lef \
+      def read picorv32a.def &
+
+#### Running Standard Cell Placement:
+
+run_floorplan
+
+After this completes, we can inspect the DEF file that was generated:
+
+cd results/floorplan/
+less picorv32a.def
+
+#### Viewing the Floorplan in Magic
+
+magic -T /home/vsduser/Desktop/OpenLane/designs/picorv32a/sky130A/libs.tech/magic/sky130A.tech \
+      lef read ../../tmp/merged.nom.lef \
+      def read picorv32a.def &
+      
+#### Running Placement
+
+run_placement
+
+# Day 3 — Cell Characterization (Magic & ngspice)
+
+#### SPICE Deck Construction
+
+Standard cell characterization relies on highly accurate SPICE simulations. A deck specifies the PMOS/NMOS geometries, input stimulus, parasitic loads, and power supply. We specifically evaluate:
+
+- Rise/Fall Times: Measured between the 20% and 80% voltage thresholds.
+
+- Propagation Delay: Measured at the 50% threshold from input to output.
+
+#### Lab Execution — Custom Inverter Layout and Extraction
+Pulling the Layout:
+
+git clone https://github.com/nickson-jose/vsdstdcelldesign.git
+magic -T sky130A.tech sky130_inv.mag &
+
+#### Extracting Netlist in Magic tkcon:
+
+```tcl
+extract all
+ext2spice cthresh 0 rthresh 0
+ext2spice
 ```
+
+#### Prepping the file by observing grid parameters:
+
+#### Transient Analysis with ngspice:
+
+
+ngspice sky130_inv.spice
+```
+```ngspice
+plot y vs time a
+```
+#### Rise transition time calculation
+
+Rise transition time = Time taken for output to rise to 80% - Time taken for output to rise to 20%
+
+20% of output = 660 mV
+
+80% of output = 2.64 V
+
+#### Fall transition time calculation
+
+Fall transition time = Time taken for output to fall to 20% - Time taken for output to fall to 80%
+
+20% of output = 660 mV
+
+80% of output = 2.64 V   
+
+Incorrectly implemented poly.9 simple rule correction
+
+Incorrectly implemented poly.9 rule no drc violation even though spacing < 0.48u
+
+Find problem in the DRC section of the old magic tech file for the skywater process and fix them.

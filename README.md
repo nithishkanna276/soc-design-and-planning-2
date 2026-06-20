@@ -314,3 +314,61 @@ Exit to OpenLANE flow
 exit
 
 Find problem in the DRC section of the old magic tech file for the skywater process and fix them.
+
+# Day 5 — Post-Route Processing & Routing Stages
+
+## Global Routing vs. Detailed Routing
+#### Routing logic paths while adhering to complex fabrication rules is accomplished in two major stages:
+
+1. Global Routing (FastRoute): Calculates approximate pathways across a grid of routing cells, providing rough topologies and solving broad congestion.
+
+2. Detailed Routing (TritonRoute): Computes the exact tracks, physical wiring, and via drops necessary to connect the logic without violating node DRC constraints (like spacing, minimum metal area, or antenna rules).
+
+#### Lab Execution — Final Power Network and Routing
+
+#### Power Grid Generation:
+
+gen_pdn
+
+#### Executing Detailed Route:
+
+run_routing
+
+Inspecting the PDN and route output in Magic:
+
+##### Development Environment & Toolchain
+
+The OpenLANE pipeline utilizes a heavy Linux container stack. This flow and the respective labs were independently set up and processed natively on local hardware architectures, specifically validated on an Acer Aspire A514-54 and a Lenovo Flex 2-14 to test tooling compatibility across different host hardware configurations.
+
+## Tools & Environment
+
+| Tool | Purpose |
+|---|---|
+| **OpenLANE** | RTL-to-GDSII automation flow |
+| **Yosys** | RTL synthesis |
+| **OpenROAD** | Floorplan, Placement, CTS, Routing |
+| **Magic** | Layout editor, DRC, LVS |
+| **OpenSTA** | Static Timing Analysis |
+| **ngspice** | SPICE simulation |
+| **TritonRoute** | Detailed routing |
+| **Netgen** | LVS (Layout vs Schematic) |
+| **Sky130 PDK** | SkyWater 130nm open-source PDK |
+
+
+## Key Learnings
+
+- Understood how a chip moves from an idea (RTL) to a manufacturable file (GDSII) using a fully open-source toolchain
+- Got hands-on with floorplanning, placement, CTS, and routing for the `picorv32a` RISC-V core
+- Learned how to characterise custom standard cells and integrate them into an existing flow
+- Gained practical experience with STA concepts — setup/hold slack, OCV, CRPR — using OpenSTA
+- Understood how parasitics from post-route SPEF extraction affect timing sign-off
+
+## Acknowledgements
+
+A huge thank you to *Kunal Ghosh* (Co-founder, VSD Corp. Pvt. Ltd.) and *Nickson P Jose* (Physical Design Engineer, Intel) for putting together such a well-structured and genuinely practical workshop. Running a real CPU from RTL to GDSII using nothing but open-source tools is something I didn’t expect to be possible — and yet here we are.
+- **Kunal Ghosh** — Co-founder, VSD (VLSI System Design)
+- **Nickson Jose** — for the `vsdstdcelldesign` repository used in Day 3 labs
+- **NASSCOM** — for facilitating this workshop program
+
+## References
+

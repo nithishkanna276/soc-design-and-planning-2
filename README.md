@@ -264,9 +264,6 @@ set ::env(EXTRA_LEFS)     [glob $::env(OPENLANE_ROOT)/designs/$::env(DESIGN_NAME
 expand
 
 #### Running OpenSTA (Pre-CTS Timing)
-Newly created pre_sta.conf for STA analysis in openlane directory
-
-Newly created my_base.sdc for STA analysis in openlane/designs/picorv32a/src directory based on the file openlane/scripts/base.sd
 
 sta pre_sta.conf
 
@@ -307,9 +304,6 @@ set_propagated_clock [all_clocks]
 Check syntax of 'report_checks' command:
 help report_checks
 
-Generating custom timing report:
-report_checks -path_delay min_max -fields {slew trans net cap input_pins} -format full_clock_expanded -digits 4
-
 Exit to OpenLANE flow
 exit
 
@@ -318,6 +312,7 @@ Find problem in the DRC section of the old magic tech file for the skywater proc
 # Day 5 — Post-Route Processing & Routing Stages
 
 ## Global Routing vs. Detailed Routing
+
 #### Routing logic paths while adhering to complex fabrication rules is accomplished in two major stages:
 
 1. Global Routing (FastRoute): Calculates approximate pathways across a grid of routing cells, providing rough topologies and solving broad congestion.
@@ -357,18 +352,23 @@ The OpenLANE pipeline utilizes a heavy Linux container stack. This flow and the 
 
 ## Key Learnings
 
-- Understood how a chip moves from an idea (RTL) to a manufacturable file (GDSII) using a fully open-source toolchain
-- Got hands-on with floorplanning, placement, CTS, and routing for the `picorv32a` RISC-V core
-- Learned how to characterise custom standard cells and integrate them into an existing flow
-- Gained practical experience with STA concepts — setup/hold slack, OCV, CRPR — using OpenSTA
-- Understood how parasitics from post-route SPEF extraction affect timing sign-off
+ Understood how a chip moves from an idea (RTL) to a manufacturable file (GDSII) using a fully open-source toolchain
+ Got hands-on with floorplanning, placement, CTS, and routing for the `picorv32a` RISC-V core
+ Learned how to characterise custom standard cells and integrate them into an existing flow
+ Gained practical experience with STA concepts — setup/hold slack, OCV, CRPR — using OpenSTA
+ Understood how parasitics from post-route SPEF extraction affect timing sign-off
 
 ## Acknowledgements
 
 A huge thank you to *Kunal Ghosh* (Co-founder, VSD Corp. Pvt. Ltd.) and *Nickson P Jose* (Physical Design Engineer, Intel) for putting together such a well-structured and genuinely practical workshop. Running a real CPU from RTL to GDSII using nothing but open-source tools is something I didn’t expect to be possible — and yet here we are.
-- **Kunal Ghosh** — Co-founder, VSD (VLSI System Design)
-- **Nickson Jose** — for the `vsdstdcelldesign` repository used in Day 3 labs
-- **NASSCOM** — for facilitating this workshop program
+ **Kunal Ghosh** — Co-founder, VSD (VLSI System Design)
+ **Nickson Jose** — for the `vsdstdcelldesign` repository used in Day 3 labs
+ **NASSCOM** — for facilitating this workshop program
 
 ## References
+
+ [VSD SoC Design Workshop](https://www.vlsisystemdesign.com/)
+ [OpenLANE GitHub](https://github.com/The-OpenROAD-Project/OpenLane)
+ [SkyWater Sky130 PDK](https://github.com/google/skywater-pdk)
+ [vsdstdcelldesign](https://github.com/nickson-jose/vsdstdcelldesign)
 
